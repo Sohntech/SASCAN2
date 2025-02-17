@@ -21,7 +21,7 @@ const determinePresenceStatus = (scanTime: Date): PresenceStatus => {
 export const scanPresence = async (req: AuthRequest, res: Response) => {
   try {
     const { matricule } = req.body;
-    
+
     const student = await prisma.user.findFirst({
       where: { matricule },
     });
@@ -35,7 +35,7 @@ export const scanPresence = async (req: AuthRequest, res: Response) => {
 
     const presence = await prisma.presence.create({
       data: {
-        userId: student.id,
+        userId: matricule,
         status,
         scanTime,
       },
@@ -57,14 +57,18 @@ export const getPresences = async (req: AuthRequest, res: Response) => {
     let where: any = {};
 
     if (startDate && endDate) {
+
+      const startOfDay = new Date((new Date(startDate.toString())).setHours(0, 0, 0, 0)); // Début de la journée
+      const endOfDay = new Date((new Date(endDate.toString())).setHours(23, 59, 59, 999)); // Fin de la journée
+  
       where.scanTime = {
-        gte: new Date(startDate as string),
-        lte: new Date(endDate as string),
+        gte: startOfDay,
+        lte: endOfDay,
       };
     }
 
     if (status) {
-      where.status = status;
+      where.status = status;    
     }
 
     if (referentiel) {
@@ -120,3 +124,33 @@ export const getStudentPresences = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+export const getPresenceToday = async (req: AuthRequest, res: Response) => {
+  try{
+
+    const { userId } = req.params;
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0)); // Début de la journée
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999)); // Fin de la journée
+
+    const presence = await prisma.presence.findFirst({
+      where: {
+        userId,
+        scanTime: {
+          gte: startOfDay, // Inclusif
+          lte: endOfDay,   // Inclusif
+        },
+      },
+      orderBy: {
+        scanTime: 'desc',
+      },
+    });
+
+
+    res.json({
+      presence,
+    });
+  }catch(e){
+    res.status(500).json({ message: 'Server error' });
+  }
+}
