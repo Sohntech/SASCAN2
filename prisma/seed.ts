@@ -19,7 +19,7 @@ async function main() {
   });
 
   // Create vigil user
-  const vigilPassword = await bcrypt.hash('Vigil123!', 10);
+  const vigilPassword = await bcrypt.hash('c', 10);
   await prisma.user.upsert({
     where: { email: 'vigil@sonatelacademy.sn' },
     update: {},
