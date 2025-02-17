@@ -27,9 +27,14 @@ export const register = async (req: FileRequest, res: Response) => {
     
     let photoUrl = undefined;
     if (req.file) {
+      console.log('Fichier reçu:', req.file);
       const result = await cloudinary.uploader.upload(req.file.path);
       photoUrl = result.secure_url;
+      console.log('Photo uploadée sur Cloudinary:', photoUrl);
+    } else {
+      console.log('Aucun fichier reçu');
     }
+    
 
     let matricule = undefined;
     let qrCode = undefined;
