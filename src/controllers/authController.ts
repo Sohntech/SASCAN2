@@ -8,7 +8,7 @@ import { loginSchema, registerSchema } from '../validations/authValidation';
 import cloudinary from '../config/cloudinary';
 import { FileRequest } from '../types';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient(); 
 
 export const register = async (req: FileRequest, res: Response) => {
   try {

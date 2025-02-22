@@ -3,10 +3,16 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export const generateMatricule = async (referentiel: string): Promise<string> => {
-  // Get current year
+  await prisma.$connect();
+
+  if (!referentiel || typeof referentiel !== 'string') {
+    throw new Error('Le référentiel doit être une chaîne valide.');
+  }
+
+  // Obtenir l'année actuelle
   const year = new Date().getFullYear().toString().slice(-2);
-  
-  // Get referentiel prefix
+
+  // Mapper les préfixes des référentiels
   const prefixMap: { [key: string]: string } = {
     'RefDigital': 'RD',
     'DevWeb': 'DW',
@@ -14,22 +20,43 @@ export const generateMatricule = async (referentiel: string): Promise<string> =>
     'AWS': 'AW',
     'Hackeuse': 'HK'
   };
-  
+
   const prefix = prefixMap[referentiel] || 'XX';
-  
-  // Get count of students in this referentiel for this year
-  const count = await prisma.user.count({
-    where: {
-      referentiel,
-      matricule: {
-        startsWith: `${prefix}${year}`
+
+  let matricule: string | undefined;
+  let unique = false;
+  let attempts = 0;
+
+  while (!unique && attempts < 10) {
+    // Compter les utilisateurs avec ce référentiel et cette année
+    const count = await prisma.user.count({
+      where: {
+        referentiel: { equals: referentiel },
+        matricule: {
+          startsWith: `${prefix}${year}`
+        }
       }
+    });
+
+    // Générer le matricule
+    const sequence = (count + 1 + attempts).toString().padStart(3, '0');
+    matricule = `${prefix}${year}${sequence}`;
+
+    // Vérifier si le matricule existe déjà
+    const existingUser = await prisma.user.findUnique({
+      where: { matricule }
+    });
+
+    if (!existingUser) {
+      unique = true;
+    } else {
+      attempts++; // Essayer un autre numéro
     }
-  });
-  
-  // Generate sequence number (padded with zeros)
-  const sequence = (count + 1).toString().padStart(3, '0');
-  
-  // Combine all parts
-  return `${prefix}${year}${sequence}`;
+  }
+
+  if (!unique) {
+    throw new Error('Impossible de générer un matricule unique après plusieurs essais.');
+  }
+
+  return matricule as string;
 };
