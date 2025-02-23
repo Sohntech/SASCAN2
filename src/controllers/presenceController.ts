@@ -85,8 +85,8 @@ export const markAbsentAtFourPM = async () => {
         },
       });
 
+      // Si aucune présence n'existe, créez-en une nouvelle
       if (!presence) {
-        // Marquer comme absent
         await prisma.presence.create({
           data: {
             userId: student.matricule!, // Utilisez la matricule pour userId
@@ -95,10 +95,12 @@ export const markAbsentAtFourPM = async () => {
           },
         });
         console.log(`Étudiant ${student.firstName} ${student.lastName} marqué comme absent.`);
+      } else {
+        console.log(`Présence déjà enregistrée pour ${student.firstName} ${student.lastName} aujourd'hui.`);
       }
     }
 
-    console.log('Absences marquées pour les non-scannés à 16h.');
+    console.log('Processus de marquage des absences terminé.');
   } catch (error) {
     console.error('Erreur lors de la mise à jour des absences:', error);
   }
