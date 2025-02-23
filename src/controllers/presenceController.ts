@@ -53,21 +53,19 @@ export const scanPresence = async (req: AuthRequest, res: Response) => {
 export const markAbsentAtFourPM = async () => {
   try {
     const now = new Date();
-    const todayStart = new Date(now.setHours(0, 0, 0, 0)); // Début de la journée
-    const todayEnd = new Date(now.setHours(23, 59, 59, 999)); // Fin de la journée
+    const todayStart = new Date(now.setHours(0, 0, 0, 0));
+    const todayEnd = new Date(now.setHours(23, 59, 59, 999));
 
-    // Récupérer tous les étudiants de type APPRENANT
     const students = await prisma.user.findMany({
       where: {
-        role: 'APPRENANT', // Filtrer les étudiants de type APPRENANT
+        role: 'APPRENANT',
       },
     });
 
     for (const student of students) {
-      // Vérifier si l'étudiant a une présence enregistrée pour la journée
       const presence = await prisma.presence.findFirst({
         where: {
-          userId: student.id, // Utiliser l'id de l'étudiant
+          userId: student.id, // Assurez-vous d'utiliser l'id
           scanTime: {
             gte: todayStart,
             lte: todayEnd,
@@ -76,12 +74,11 @@ export const markAbsentAtFourPM = async () => {
       });
 
       if (!presence) {
-        // Marquer comme absent si aucune présence n'est enregistrée
         await prisma.presence.create({
           data: {
-            userId: student.id, // Utiliser l'id de l'étudiant
+            userId: student.id, // Utilisez l'id de l'étudiant
             status: PresenceStatus.ABSENT,
-            scanTime: new Date(), // Marquer l'absence à l'heure actuelle
+            scanTime: new Date(),
           },
         });
         console.log(`Étudiant ${student.firstName} ${student.lastName} marqué comme absent.`);
@@ -93,6 +90,7 @@ export const markAbsentAtFourPM = async () => {
     console.error('Erreur lors de la mise à jour des absences:', error);
   }
 };
+
 
 
 export const getPresences = async (req: AuthRequest, res: Response) => {
