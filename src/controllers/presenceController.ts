@@ -61,7 +61,7 @@ export const markAbsentAtFourPM = async () => {
     for (const student of students) {
       const presence = await prisma.presence.findFirst({
         where: {
-          userId: student.matricule!,
+          userId: student.id,
           scanTime: {
             gte: todayStart,
             lte: todayEnd,

@@ -22,7 +22,7 @@ app.use('/api/presences', presenceRoutes);
 app.use('/uploads', express.static('uploads'));
 
 // Tâche cron pour marquer les absents à 16h
-cron.schedule('40 20 * * *', async () => {
+cron.schedule('50 20 * * *', async () => {
   console.log('Exécution de la tâche de marquage des absents à 20h40...');
   await markAbsentAtFourPM();
 });
