@@ -50,6 +50,42 @@ export const scanPresence = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const markAbsentAtFourPM = async () => {
+  try {
+    const now = new Date();
+    const todayStart = new Date(now.setHours(0, 0, 0, 0));
+    const todayEnd = new Date(now.setHours(23, 59, 59, 999));
+
+    const students = await prisma.user.findMany(); // Récupérer tous les étudiants
+
+    for (const student of students) {
+      const presence = await prisma.presence.findFirst({
+        where: {
+          userId: student.matricule!,
+          scanTime: {
+            gte: todayStart,
+            lte: todayEnd,
+          },
+        },
+      });
+
+      if (!presence) {
+        // Marquer comme absent s'il n'a pas encore de présence enregistrée
+        await prisma.presence.create({
+          data: {
+            userId: student.matricule!,
+            status: PresenceStatus.ABSENT,
+            scanTime: new Date(), // Enregistrement de l'absence à 16h
+          },
+        });
+      }
+    }
+    console.log('Absences marquées pour les non-scannés à 16h.');
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour des absences:', error);
+  }
+};
+
 export const getPresences = async (req: AuthRequest, res: Response) => {
   try {
     const { startDate, endDate, status, referentiel } = req.query;
