@@ -7,6 +7,38 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id               String     @id @default(uuid())
+  email            String     @unique
+  password         String
+  firstName        String
+  lastName         String
+  role             UserRole
+  matricule        String?    @unique
+  photoUrl         String?
+  referentiel      String?
+  qrCode           String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  presences        Presence[]
+
+  @@map("users")
+}
+
+model Presence {
+  id        String         @id @default(uuid())
+  userId    String
+  status    PresenceStatus
+  scanTime  DateTime       @default(now())
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  user      User           @relation(fields: [userId], references: [matricule])
+
+  @@map("presences")
+}
+
 enum UserRole {
   ADMIN
   VIGIL
@@ -17,34 +49,4 @@ enum PresenceStatus {
   PRESENT
   LATE
   ABSENT
-}
-
-model User {
-  id            String      @id @default(uuid())
-  email         String      @unique
-  password      String
-  firstName     String
-  lastName      String
-  role          UserRole
-  matricule     String?     @unique
-  photoUrl      String?
-  referentiel   String?
-  qrCode        String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  presences     Presence[]
-
-  @@map("users")
-}
-
-model Presence {
-  id            String          @id @default(uuid())
-  userId        String
-  user          User            @relation(fields: [userId], references: [matricule])
-  status        PresenceStatus
-  scanTime      DateTime        @default(now())
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-
-  @@map("presences")
 }
