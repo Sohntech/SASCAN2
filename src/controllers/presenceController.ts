@@ -50,7 +50,7 @@ export const scanPresence = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const markAbsentAtEightFifty = async () => {
+export const markAbsentAtFourPM = async () => {
   try {
     const now = new Date();
     const todayStart = new Date(now.setHours(0, 0, 0, 0));
@@ -61,7 +61,7 @@ export const markAbsentAtEightFifty = async () => {
     for (const student of students) {
       const presence = await prisma.presence.findFirst({
         where: {
-          userId: student.matricule!, // Assurez-vous d'utiliser le matricule qui est l'ID unique
+          userId: student.id,
           scanTime: {
             gte: todayStart,
             lte: todayEnd,
@@ -70,22 +70,21 @@ export const markAbsentAtEightFifty = async () => {
       });
 
       if (!presence) {
-        // Si aucun scan n'est trouvé pour cet étudiant, on le marque absent
+        // Marquer comme absent s'il n'a pas encore de présence enregistrée
         await prisma.presence.create({
           data: {
-            userId: student.matricule!, // Utiliser le matricule de l'étudiant pour lier la présence
+            userId: student.matricule!,
             status: PresenceStatus.ABSENT,
-            scanTime: new Date(), // Marquer comme absent à l'heure actuelle
+            scanTime: new Date(), // Enregistrement de l'absence à 16h
           },
         });
       }
     }
-    console.log('Absences marquées pour les non-scannés à 20h50.');
+    console.log('Absences marquées pour les non-scannés à 16h.');
   } catch (error) {
     console.error('Erreur lors de la mise à jour des absences:', error);
   }
 };
-
 
 export const getPresences = async (req: AuthRequest, res: Response) => {
   try {
