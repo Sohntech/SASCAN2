@@ -10,6 +10,17 @@ dotenv.config();
 
 const app = express();
 
+// Middleware pour rediriger HTTP vers HTTPS en production
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    // Vérifie si la requête est en HTTP et redirige vers HTTPS
+    if (req.headers['x-forwarded-proto'] !== 'https') {
+      return res.redirect('https://' + req.headers.host + req.url);
+    }
+    next();
+  });
+}
+
 app.use(cors());
 app.use(express.json());
 
@@ -18,7 +29,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/presences', presenceRoutes);
 app.use('/uploads', express.static('uploads'));
-
 
 // Error Handler
 app.use(errorHandler);
