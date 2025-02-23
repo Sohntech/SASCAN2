@@ -10,18 +10,15 @@ dotenv.config();
 
 const app = express();
 
-// Middleware pour rediriger HTTP vers HTTPS en production
-if (process.env.NODE_ENV === 'production') {
-  app.use((req, res, next) => {
-    // Vérifie si la requête est en HTTP et redirige vers HTTPS
-    if (req.headers['x-forwarded-proto'] !== 'https') {
-      return res.redirect('https://' + req.headers.host + req.url);
-    }
-    next();
-  });
-}
+// Configure CORS pour autoriser le domaine de ton frontend
+const corsOptions = {
+  origin: 'https://scan-front-vf.vercel.app', // Remplace par l'URL de ton frontend
+  methods: 'GET,POST,PUT,DELETE',
+  allowedHeaders: 'Content-Type, Authorization',
+};
 
-app.use(cors());
+app.use(cors(corsOptions));
+
 app.use(express.json());
 
 // Routes
