@@ -10,15 +10,7 @@ dotenv.config();
 
 const app = express();
 
-// Configure CORS pour autoriser le domaine de ton frontend
-const corsOptions = {
-  origin: 'https://scan-front-vf.vercel.app', // Remplace par l'URL de ton frontend
-  methods: 'GET,POST,PUT,DELETE',
-  allowedHeaders: 'Content-Type, Authorization',
-};
-
-app.use(cors(corsOptions));
-
+app.use(cors());
 app.use(express.json());
 
 // Routes
@@ -26,6 +18,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/presences', presenceRoutes);
 app.use('/uploads', express.static('uploads'));
+
 
 // Error Handler
 app.use(errorHandler);
