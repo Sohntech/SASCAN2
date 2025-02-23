@@ -56,6 +56,7 @@ export const markAbsentAtFourPM = async () => {
     const todayStart = new Date(now.setHours(0, 0, 0, 0));
     const todayEnd = new Date(now.setHours(23, 59, 59, 999));
 
+    // Récupérer tous les apprenants
     const students = await prisma.user.findMany({
       where: {
         role: 'APPRENANT',
@@ -63,9 +64,9 @@ export const markAbsentAtFourPM = async () => {
     });
 
     for (const student of students) {
-      // Vérifiez si l'utilisateur existe
+      // Vérifiez si la matricule existe dans la table users
       const userExists = await prisma.user.findUnique({
-        where: { id: student.id }, // Assurez-vous d'utiliser l'ID correct
+        where: { matricule: student.matricule! }, // Utilisez la matricule
       });
 
       if (!userExists) {
@@ -73,10 +74,10 @@ export const markAbsentAtFourPM = async () => {
         continue; // Passez à l'utilisateur suivant
       }
 
-      // Vérifier la présence pour la journée
+      // Vérifiez la présence pour la journée
       const presence = await prisma.presence.findFirst({
         where: {
-          userId: student.id, // Utilisez l'ID de l'étudiant
+          userId: student.matricule!, // Utilisez la matricule pour userId
           scanTime: {
             gte: todayStart,
             lte: todayEnd,
@@ -88,7 +89,7 @@ export const markAbsentAtFourPM = async () => {
         // Marquer comme absent
         await prisma.presence.create({
           data: {
-            userId: student.id, // Utilisez l'ID de l'étudiant
+            userId: student.matricule!, // Utilisez la matricule pour userId
             status: PresenceStatus.ABSENT,
             scanTime: new Date(),
           },
@@ -102,6 +103,7 @@ export const markAbsentAtFourPM = async () => {
     console.error('Erreur lors de la mise à jour des absences:', error);
   }
 };
+
 
 
 
