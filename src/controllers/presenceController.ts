@@ -56,7 +56,6 @@ export const markAbsentAtFourPM = async () => {
     const todayStart = new Date(now.setHours(0, 0, 0, 0));
     const todayEnd = new Date(now.setHours(23, 59, 59, 999));
 
-    // Récupérer tous les apprenants
     const students = await prisma.user.findMany({
       where: {
         role: 'APPRENANT',
@@ -64,50 +63,36 @@ export const markAbsentAtFourPM = async () => {
     });
 
     for (const student of students) {
-      // Vérifiez si la matricule existe dans la table users
-      const userExists = await prisma.user.findUnique({
-        where: { matricule: student.matricule! }, // Utilisez la matricule
-      });
-
-      if (!userExists) {
-        console.log(`Utilisateur non trouvé : ${student.firstName} ${student.lastName}`);
-        continue; // Passez à l'utilisateur suivant
-      }
-
-      // Vérifiez la présence pour la journée
       const presence = await prisma.presence.findFirst({
         where: {
-          userId: student.matricule!, // Utilisez la matricule pour userId
+          userId: student.matricule!,
           scanTime: {
             gte: todayStart,
             lte: todayEnd,
           },
+          status: PresenceStatus.ABSENT, // Ajout de cette vérification
         },
       });
 
-      // Si aucune présence n'existe, créez-en une nouvelle
       if (!presence) {
         await prisma.presence.create({
           data: {
-            userId: student.matricule!, // Utilisez la matricule pour userId
+            userId: student.matricule!,
             status: PresenceStatus.ABSENT,
             scanTime: new Date(),
           },
         });
-        console.log(`Étudiant ${student.firstName} ${student.lastName} marqué comme absent.`);
+        console.log(`Étudiant ${student.firstName} ${student.lastName} marqué comme absent 🚩!`);
       } else {
-        console.log(`Présence déjà enregistrée pour ${student.firstName} ${student.lastName} aujourd'hui.`);
+        console.log(`Absence déjà enregistrée pour ${student.firstName} ${student.lastName} ✅ !`);
       }
     }
 
-    console.log('Processus de marquage des absences terminé.');
+    console.log('--- Processus de marquage des absences terminé ✅ !!!');
   } catch (error) {
     console.error('Erreur lors de la mise à jour des absences:', error);
   }
 };
-
-
-
 
 
 export const getPresences = async (req: AuthRequest, res: Response) => {

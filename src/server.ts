@@ -22,9 +22,10 @@ app.use('/api/presences', presenceRoutes);
 app.use('/uploads', express.static('uploads'));
 
 // Tâche cron pour marquer les absents à 16h
-cron.schedule('42 23 * * *', async () => {
-  console.log('Exécution de la tâche de marquage des absents à 20h40...');
+cron.schedule('0 16 * * 1-5', async () => {
+  console.log('--- --- --- Début de la tâche cron : marquage des absences (lundi à vendredi à 16h00) !!!');
   await markAbsentAtFourPM();
+  console.log('--- --- --- Fin de la tâche cron !!!');
 });
 
 // Error Handler
@@ -32,5 +33,5 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT} !!!`);
 });
