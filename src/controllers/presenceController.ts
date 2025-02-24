@@ -11,7 +11,7 @@ const determinePresenceStatus = (scanTime: Date): PresenceStatus => {
 
   if (timeInMinutes <= 8 * 60 + 15) { // Before 8:15
     return PresenceStatus.PRESENT;
-  } else if (timeInMinutes <= 8 * 60 + 30) { // Between 8:15 and 8:30
+  } else if (timeInMinutes <= 17 * 60 + 0) { // Before 17:00
     return PresenceStatus.LATE;
   } else { // After 8:30
     return PresenceStatus.ABSENT;
@@ -70,11 +70,12 @@ export const markAbsentAtFourPM = async () => {
             gte: todayStart,
             lte: todayEnd,
           },
-          status: PresenceStatus.ABSENT, // Ajout de cette vérification
         },
       });
 
-      if (!presence) {
+      if (presence) {
+        console.log(`Étudiant ${student.firstName} ${student.lastName} déjà enregistré ✅ !`);
+      } else {
         await prisma.presence.create({
           data: {
             userId: student.matricule!,
@@ -83,8 +84,6 @@ export const markAbsentAtFourPM = async () => {
           },
         });
         console.log(`Étudiant ${student.firstName} ${student.lastName} marqué comme absent 🚩!`);
-      } else {
-        console.log(`Absence déjà enregistrée pour ${student.firstName} ${student.lastName} ✅ !`);
       }
     }
 
@@ -93,6 +92,7 @@ export const markAbsentAtFourPM = async () => {
     console.error('Erreur lors de la mise à jour des absences:', error);
   }
 };
+
 
 
 export const getPresences = async (req: AuthRequest, res: Response) => {
