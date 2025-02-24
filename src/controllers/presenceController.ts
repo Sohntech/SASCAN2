@@ -11,7 +11,7 @@ const determinePresenceStatus = (scanTime: Date): PresenceStatus => {
 
   if (timeInMinutes <= 8 * 60 + 15) { // Before 8:15
     return PresenceStatus.PRESENT;
-  } else if (timeInMinutes <= 17 * 60 + 0) { // Before 17:00
+  } else if (timeInMinutes <= 16 * 60 + 0) { // Before 16:00
     return PresenceStatus.LATE;
   } else { // After 8:30
     return PresenceStatus.ABSENT;
