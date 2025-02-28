@@ -8,7 +8,6 @@ import { loginSchema, registerSchema } from '../validations/authValidation';
 import cloudinary from '../config/cloudinary';
 import { FileRequest } from '../types';
 import { sendResetPasswordEmail } from "../utils/sendEmail";
-import jwt from 'jsonwebtoken';
 import { generate6DigitCode } from "../utils/generate6DigitCode";
 
 const prisma = new PrismaClient(); 
@@ -147,13 +146,13 @@ export const resetPassword = async (req: Request, res: Response) => {
   try {
     const { token, newPassword } = req.body;
 
-    // Vérifier si le token existe dans le champ `emailVerified` (ou autre champ existant)
-    const user = await prisma.user.findUnique({
-      where: { email: req.body.email, resetToken: token }, // Vérification du code à 6 chiffres
+    // Vérifier si le token existe et est valide
+    const user = await prisma.user.findFirst({
+      where: { resetToken: token },  // Vérification du code à 6 chiffres
     });
 
     // Vérifier si le token est expiré
-    if (!user || !isValidToken(token)) {  // `isValidToken` est une fonction que vous définissez
+    if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
       return res.status(400).json({ message: "Code invalide ou expiré." });
     }
 
@@ -163,10 +162,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     // Mettre à jour le mot de passe de l'utilisateur
     await prisma.user.update({
       where: { id: user.id },
-      data: {
-        password: hashedPassword,
-        resetToken: null,  // Réinitialiser le code après utilisation
-      },
+      data: { password: hashedPassword, resetToken: null, resetTokenExpiry: null },  // Réinitialiser le token après utilisation
     });
 
     res.json({ message: "Mot de passe mis à jour avec succès !" });
@@ -174,9 +170,4 @@ export const resetPassword = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Erreur serveur." });
   }
 };
-function isValidToken(token: string) {
-  // Assuming the token is a 6-digit code, we can validate its format
-  const tokenRegex = /^\d{6}$/;
-  return tokenRegex.test(token);
-}
 
