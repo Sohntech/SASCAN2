@@ -50,49 +50,49 @@ export const scanPresence = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const markAbsentAtFourPM = async () => {
-  try {
-    const now = new Date();
-    const todayStart = new Date(now.setHours(0, 0, 0, 0));
-    const todayEnd = new Date(now.setHours(23, 59, 59, 999));
+  export const markAbsentAtFourPM = async () => {
+    try {
+      const now = new Date();
+      const todayStart = new Date(now.setHours(0, 0, 0, 0));
+      const todayEnd = new Date(now.setHours(23, 59, 59, 999));
 
-    const students = await prisma.user.findMany({
-      where: {
-        role: 'APPRENANT',
-      },
-    });
-
-    for (const student of students) {
-      const presence = await prisma.presence.findFirst({
+      const students = await prisma.user.findMany({
         where: {
-          userId: student.matricule!,
-          scanTime: {
-            gte: todayStart,
-            lte: todayEnd,
-          },
-          status: PresenceStatus.ABSENT, // Ajout de cette vérification
+          role: 'APPRENANT',
         },
       });
 
-      if (!presence) {
-        await prisma.presence.create({
-          data: {
+      for (const student of students) {
+        const presence = await prisma.presence.findFirst({
+          where: {
             userId: student.matricule!,
-            status: PresenceStatus.ABSENT,
-            scanTime: new Date(),
+            scanTime: {
+              gte: todayStart,
+              lte: todayEnd,
+            },
+            status: PresenceStatus.ABSENT, // Ajout de cette vérification
           },
         });
-        console.log(`Étudiant ${student.firstName} ${student.lastName} marqué comme absent 🚩!`);
-      } else {
-        console.log(`Absence déjà enregistrée pour ${student.firstName} ${student.lastName} ✅ !`);
-      }
-    }
 
-    console.log('--- Processus de marquage des absences terminé ✅ !!!');
-  } catch (error) {
-    console.error('Erreur lors de la mise à jour des absences:', error);
-  }
-};
+        if (!presence) {
+          await prisma.presence.create({
+            data: {
+              userId: student.matricule!,
+              status: PresenceStatus.ABSENT,
+              scanTime: new Date(),
+            },
+          });
+          console.log(`Étudiant ${student.firstName} ${student.lastName} marqué comme absent 🚩!`);
+        } else {
+          console.log(`Absence déjà enregistrée pour ${student.firstName} ${student.lastName} ✅ !`);
+        }
+      }
+
+      console.log('--- Processus de marquage des absences terminé ✅ !!!');
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des absences:', error);
+    }
+  };
 
 
 export const getPresences = async (req: AuthRequest, res: Response) => {
