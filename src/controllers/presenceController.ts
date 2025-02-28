@@ -11,7 +11,7 @@ const determinePresenceStatus = (scanTime: Date): PresenceStatus => {
 
   if (timeInMinutes <= 8 * 60 + 15) { // Before 8:15
     return PresenceStatus.PRESENT;
-  } else if (timeInMinutes <= 8 * 60 + 30) { // Between 8:15 and 8:30
+  } else if (timeInMinutes <= 16 * 60 + 0) { // Before 16:00
     return PresenceStatus.LATE;
   } else { // After 8:30
     return PresenceStatus.ABSENT;
@@ -62,37 +62,37 @@ export const scanPresence = async (req: AuthRequest, res: Response) => {
         },
       });
 
-      for (const student of students) {
-        const presence = await prisma.presence.findFirst({
-          where: {
+    for (const student of students) {
+      const presence = await prisma.presence.findFirst({
+        where: {
+          userId: student.matricule!,
+          scanTime: {
+            gte: todayStart,
+            lte: todayEnd,
+          },
+          status: PresenceStatus.ABSENT, // Ajout de cette vérification
+        },
+      });
+
+      if (presence) {
+        console.log(`Étudiant ${student.firstName} ${student.lastName} déjà enregistré ✅ !`);
+      } else {
+        await prisma.presence.create({
+          data: {
             userId: student.matricule!,
-            scanTime: {
-              gte: todayStart,
-              lte: todayEnd,
-            },
-            status: PresenceStatus.ABSENT, // Ajout de cette vérification
+            status: PresenceStatus.ABSENT,
+            scanTime: new Date(),
           },
         });
-
-        if (!presence) {
-          await prisma.presence.create({
-            data: {
-              userId: student.matricule!,
-              status: PresenceStatus.ABSENT,
-              scanTime: new Date(),
-            },
-          });
-          console.log(`Étudiant ${student.firstName} ${student.lastName} marqué comme absent 🚩!`);
-        } else {
-          console.log(`Absence déjà enregistrée pour ${student.firstName} ${student.lastName} ✅ !`);
-        }
+        console.log(`Étudiant ${student.firstName} ${student.lastName} marqué comme absent 🚩!`);
       }
-
-      console.log('--- Processus de marquage des absences terminé ✅ !!!');
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour des absences:', error);
     }
-  };
+
+    console.log('--- Processus de marquage des absences terminé ✅ !!!');
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour des absences:', error);
+  }
+};
 
 
 export const getPresences = async (req: AuthRequest, res: Response) => {
