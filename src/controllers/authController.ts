@@ -123,11 +123,16 @@ export const forgotPassword = async (req: Request, res: Response) => {
     // Générer un code à 6 chiffres
     const resetToken = generate6DigitCode();
 
-    // Enregistrer le code dans un champ existant (par exemple `emailVerified` ici)
+    // Définir l'expiration à 15 minutes
+    const resetTokenExpiry = new Date();
+    resetTokenExpiry.setMinutes(resetTokenExpiry.getMinutes() + 15);
+
+    // Enregistrer le code et son expiration
     await prisma.user.update({
       where: { email },
       data: {
-        resetToken: resetToken, // Remplacer par un champ valide existant
+        resetToken: resetToken,
+        resetTokenExpiry: resetTokenExpiry,
       },
     });
 
@@ -146,23 +151,28 @@ export const resetPassword = async (req: Request, res: Response) => {
   try {
     const { token, newPassword } = req.body;
 
-    // Vérifier si le token existe et est valide
+    console.log("Token reçu :", token);
+
     const user = await prisma.user.findFirst({
-      where: { resetToken: token },  // Vérification du code à 6 chiffres
+      where: { resetToken: token },
     });
 
-    // Vérifier si le token est expiré
-    if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
-      return res.status(400).json({ message: "Code invalide ou expiré." });
+    if (!user) {
+      return res.status(400).json({ message: "Code invalide." });
     }
 
-    // Hacher le nouveau mot de passe
+    console.log("Date actuelle :", new Date().toISOString());
+    console.log("resetTokenExpiry de l'utilisateur :", user.resetTokenExpiry?.toISOString());
+
+    if (!user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+      return res.status(400).json({ message: "Code expiré." });
+    }
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Mettre à jour le mot de passe de l'utilisateur
     await prisma.user.update({
       where: { id: user.id },
-      data: { password: hashedPassword, resetToken: null, resetTokenExpiry: null },  // Réinitialiser le token après utilisation
+      data: { password: hashedPassword, resetToken: null, resetTokenExpiry: null },
     });
 
     res.json({ message: "Mot de passe mis à jour avec succès !" });
@@ -170,4 +180,3 @@ export const resetPassword = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Erreur serveur." });
   }
 };
-
