@@ -50,17 +50,17 @@ export const scanPresence = async (req: AuthRequest, res: Response) => {
   }
 };
 
-  export const markAbsentAtFourPM = async () => {
-    try {
-      const now = new Date();
-      const todayStart = new Date(now.setHours(0, 0, 0, 0));
-      const todayEnd = new Date(now.setHours(23, 59, 59, 999));
+export const markAbsentAtFourPM = async () => {
+  try {
+    const now = new Date();
+    const todayStart = new Date(now.setHours(0, 0, 0, 0));
+    const todayEnd = new Date(now.setHours(23, 59, 59, 999));
 
-      const students = await prisma.user.findMany({
-        where: {
-          role: 'APPRENANT',
-        },
-      });
+    const students = await prisma.user.findMany({
+      where: {
+        role: 'APPRENANT',
+      },
+    });
 
     for (const student of students) {
       const presence = await prisma.presence.findFirst({
@@ -70,13 +70,11 @@ export const scanPresence = async (req: AuthRequest, res: Response) => {
             gte: todayStart,
             lte: todayEnd,
           },
-          status: PresenceStatus.ABSENT, // Ajout de cette vérification
         },
       });
 
-      if (presence) {
-        console.log(`Étudiant ${student.firstName} ${student.lastName} déjà enregistré ✅ !`);
-      } else {
+      // On marque absent uniquement si l'apprenant n'a AUCUN statut de présence
+      if (!presence) {
         await prisma.presence.create({
           data: {
             userId: student.matricule!,
@@ -85,6 +83,8 @@ export const scanPresence = async (req: AuthRequest, res: Response) => {
           },
         });
         console.log(`Étudiant ${student.firstName} ${student.lastName} marqué comme absent 🚩!`);
+      } else {
+        console.log(`Étudiant ${student.firstName} ${student.lastName} a déjà une présence enregistrée ✅ !`);
       }
     }
 
